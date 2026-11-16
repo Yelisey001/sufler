@@ -63,11 +63,16 @@ details>summary{cursor:pointer;color:var(--muted);font-size:14px}
 .hit-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;font-size:13px;color:var(--muted)}
 .badge{display:inline-block;padding:2px 9px;border-radius:99px;font-weight:650;font-size:13px;color:#fff;background:var(--muted)}
 .badge.hi{background:var(--ok)} .badge.mid{background:var(--accent)} .badge.lo{background:var(--warn)}
-.hit-text{font-size:var(--hint-size);line-height:1.45}
-.hit-text .seg{background:var(--seg);border-radius:6px;padding:1px 3px}
-.hit-text mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 1px}
-.answer{white-space:normal;max-height:60vh;overflow:auto;margin-top:12px;padding:10px 12px;border-left:4px solid var(--ok);background:color-mix(in srgb,var(--ok) 8%,transparent);border-radius:6px;font-size:var(--hint-size);line-height:1.45}
-.answer .lbl{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--ok);font-weight:700}
+#hintMain{max-height:70vh;overflow:auto}
+body.pip #hintMain{max-height:none}
+.qtitle{font-size:calc(var(--hint-size) * .78);font-weight:650;color:var(--muted);line-height:1.35;margin-bottom:10px}
+.qtitle mark{background:none;color:var(--ink);text-decoration:underline 2px var(--accent);text-underline-offset:3px}
+.ans{font-size:var(--hint-size);line-height:1.55;max-width:68ch}
+.ans p{margin:0 0 .6em}
+.ans ul{margin:0 0 .6em;padding-left:1.2em}
+.ans li{margin:.15em 0}
+.hit-meta{margin:14px 0 0;padding-top:8px;border-top:1px solid var(--line)}
+.side-lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:4px}
 .dim{opacity:.55}
 .alts{display:flex;flex-direction:column;gap:6px}
 .alt{border:1px solid var(--line);border-radius:8px;padding:7px 10px;cursor:pointer;font-size:14px;background:var(--panel)}
@@ -152,8 +157,8 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
     <div class="card stack">
       <h2>3. Поиск</h2>
       <label class="radio" style="padding-left:0"><input type="checkbox" id="semChk"><span><b>Умный поиск по смыслу</b><small>Находит фразу, даже если её пересказали другими словами. Скачивает ещё ~120 МБ один раз.</small></span></label>
-      <label>Порог совпадения: <b id="minVal">30%</b>
-        <input type="range" id="minScore" min="10" max="70" value="30" style="width:100%"></label>
+      <label>Порог совпадения: <b id="minVal">35%</b>
+        <input type="range" id="minScore" min="15" max="85" value="35" style="width:100%"></label>
       <div class="hint-muted">Ниже порога подсказка не меняется. Много ложных срабатываний — поднимите; ничего не находит — опустите.</div>
     </div>
 
@@ -210,7 +215,7 @@ kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;paddi
 const Engine = (() => {
   const STOP = new Set((
     // ru
-    'и в во не что он на я с со как а то все всё она так его но да ты к у же вы за бы по только ее её мне было вот от меня еще ещё нет о об из ему теперь когда даже ну ли если уже или ни быть был него до вас нибудь опять уж вам ведь там потом себя ничего ей может они тут где есть надо ней для мы тебя их чем была сам чтоб без будто чего раз тоже себе под будет ж тогда кто этот того потому этого какой совсем ним здесь этом один почти мой тем чтобы нее неё сейчас были куда зачем всех никогда можно при наконец два другой хоть после над больше тот через эти нас про всего них какая много разве три эту моя впрочем хорошо свою этой перед иногда лучше чуть том нельзя такой им более всегда конечно всю между это эта вас ваш ваша ваше ваши мы наш наша наше наши скажите расскажите пожалуйста '+
+    'и в во не что он на я с со как а то все всё она так его но да ты к у же вы за бы по только ее её мне было вот от меня еще ещё нет о об из ему теперь когда даже ну ли если уже или ни быть был него до вас нибудь опять уж вам ведь там потом себя ничего ей может они тут где есть надо ней для мы тебя их чем была сам чтоб без будто чего раз тоже себе под будет ж тогда кто этот того потому этого какой совсем ним здесь этом один почти мой тем чтобы нее неё сейчас были куда зачем всех никогда можно при наконец два другой хоть после над больше тот через эти нас про всего них какая много разве три эту моя впрочем хорошо свою этой перед иногда лучше чуть том нельзя такой им более всегда конечно всю между это эта вас ваш ваша ваше ваши мы наш наша наше наши скажите расскажите пожалуйста свой своя свое своё свои своем своём своих своей своим какие каких очень просто ли можете '+
     // uk
     'і й та що не в у на з із зі як а але це ця ці цей до від по за для про чи ми ви ти я він вона воно вони його її їх мене мені тебе нам вам був була було були є бути також так же ж вже ще тільки який яка яке які де коли там тут цього цієї при після через над під між або ну то би б ваш ваша ваше ваші наш наша наше наші будь ласка '+
     // en
@@ -234,9 +239,26 @@ const Engine = (() => {
   function splitSentences(p){ return p.split(/(?<=[.!?…;])\s+/).filter(s => s.trim()); }
 
   function buildIndex(docs){
-    const units = [], paras = [], df = new Map(), inv = new Map();
+    const units = [], paras = [], df = new Map(), inv = new Map(), blocks = [];
+    // 1) detect questions in every document
+    const docQ = docs.map(doc => { const ps = splitParagraphs(doc.text); paras.push(ps); return ps.map((p, pi) => isQuestion(p) || (isHeading(ps, pi) && !/^\s*\d/.test(p))); });
+    const qaMode = docQ.reduce((a, qs) => a + qs.filter(Boolean).length, 0) >= 2;
+    const blockOf = [];
+    // 2) group paragraphs into blocks: a question + its whole answer (or one paragraph when the text has no questions)
+    paras.forEach((ps, d) => {
+      const map = []; let cur = null;
+      ps.forEach((p, pi) => {
+        if (!qaMode) { blocks.push({ d, qpi: -1, paras: [pi] }); map[pi] = blocks.length - 1; return; }
+        if (docQ[d][pi]) { cur = { d, qpi: pi, paras: [pi] }; blocks.push(cur); }
+        else if (cur) cur.paras.push(pi);
+        else { blocks.push({ d, qpi: -1, paras: [pi] }); map[pi] = blocks.length - 1; return; }
+        map[pi] = blocks.length - 1;
+      });
+      blockOf.push(map);
+    });
+    // 3) searchable units (sentences / short paragraphs), each linked to its block
     docs.forEach((doc, d) => {
-      const ps = splitParagraphs(doc.text); paras.push(ps);
+      const ps = paras[d];
       ps.forEach((p, pi) => {
         const pieces = [];
         if (p.length <= 320) pieces.push(p);
@@ -252,6 +274,7 @@ const Engine = (() => {
           const ws = words(text); if (!ws.length) continue;
           const cw = content(ws);
           const u = { id: units.length, d, pi, text, n: ws.length, norm: ws.join(' '),
+            b: blockOf[d][pi], isQ: qaMode && docQ[d][pi],
             k6: new Set(cw.map(k6)), k4: new Set(cw.map(k4)), bi: new Set() };
           for (let i = 0; i < cw.length - 1; i++) u.bi.add(k4(cw[i]) + '|' + k4(cw[i+1]));
           for (const k of u.k4) { df.set(k, (df.get(k) || 0) + 1); if (!inv.has(k)) inv.set(k, []); inv.get(k).push(u.id); }
@@ -259,7 +282,7 @@ const Engine = (() => {
         }
       });
     });
-    return { units, paras, df, inv, N: units.length, vecs: null };
+    return { units, paras, blocks, qaMode, df, inv, N: units.length, vecs: null };
   }
 
   const idf = (ix, key) => { const df = ix.df.get(key) || 0; return Math.log(1 + (ix.N - df + 0.5) / (df + 0.5)); };
@@ -285,7 +308,15 @@ const Engine = (() => {
     for (const i of cand) {
       const u = ix.units[i]; let m = 0;
       for (const t of q.terms) { if (u.k6.has(t.k6)) m += t.idf; else if (u.k4.has(t.k4)) m += 0.75 * t.idf; }
-      const cov = total ? m / total : 0;
+      let cov = total ? m / total : 0;
+      if (u.isQ) {
+        // for questions also check the other direction: how much of the document question was said
+        const qk6 = new Set(q.terms.map(t => t.k6)), qk4 = new Set(q.terms.map(t => t.k4));
+        let rm = 0, rt = 0;
+        for (const key of u.k6) { const w = idf(ix, key.slice(0, 4)); rt += w; if (qk6.has(key)) rm += w; else if (qk4.has(key.slice(0, 4))) rm += 0.75 * w; }
+        const rev = rt ? rm / rt : 0;
+        cov = Math.max(cov, 0.5 * cov + 0.5 * rev);
+      }
       const bi = qbi.length ? qbi.filter(b => u.bi.has(b)).length / qbi.length : cov;
       scored.push({ i, u, cov, bi });
     }
@@ -313,8 +344,16 @@ const Engine = (() => {
       }
       scored = [...map.values()];
     }
-    scored.sort((a, b) => b.score - a.score);
-    return { q, results: scored.slice(0, opts.k || 5) };
+    // one result per question block: a hit in the question counts fully, a hit in the answer a bit less
+    const byBlock = new Map();
+    for (const s of scored) {
+      const w = s.u.isQ ? 1 : (ix.qaMode && ix.blocks[s.u.b].qpi >= 0 ? 0.8 : 0.9);
+      const v = s.exact ? s.score * Math.max(w, 0.85) : s.score * w;
+      const cur = byBlock.get(s.u.b);
+      if (!cur || v > cur.score) byBlock.set(s.u.b, Object.assign({}, s, { raw: s.score, score: v, b: s.u.b }));
+    }
+    const results = [...byBlock.values()].sort((a, b) => b.score - a.score);
+    return { q, results: results.slice(0, opts.k || 5) };
   }
 
   const QPREFIX = /^\s*(вопрос|питання|question|q)\s*[\d.:)\-–—]/i;
@@ -323,24 +362,15 @@ const Engine = (() => {
   const isHeading = (ps, j) => { const p = ps[j];
     return p.length <= 150 && !/[.;:!…,]\s*$/.test(p) && !/^\s*[-•*–—]/.test(p) && ps[j + 1] && ps[j + 1].length > p.length * 1.5; };
 
-  function context(ix, u){
-    const ps = ix.paras[u.d], para = ps[u.pi];
-    const isQ = isQuestion(para) || isHeading(ps, u.pi);
-    let answer = '';
-    if (isQ) {
-      // the whole answer: every paragraph until the next question / heading
-      const out = []; let len = 0;
-      for (let j = u.pi + 1; j < ps.length && out.length < 40 && len < 8000; j++) {
-        if (isQuestion(ps[j])) break;
-        if (out.length && isHeading(ps, j) && !/^\s*\d/.test(ps[j])) break;
-        out.push(ps[j]); len += ps[j].length;
-      }
-      answer = out.join('\n');
-    }
-    return { para, answer, isQ };
+  // the question and its full answer for a block
+  function block(ix, b){
+    const bl = ix.blocks[b], ps = ix.paras[bl.d];
+    const question = bl.qpi >= 0 ? ps[bl.qpi] : '';
+    const answer = bl.paras.filter(pi => pi !== bl.qpi).map(pi => ps[pi]);
+    return { d: bl.d, qpi: bl.qpi, firstPi: bl.paras[0], question, answer };
   }
 
-  return { buildIndex, search, context, words, normWord, k6, k4, isContent, splitParagraphs };
+  return { buildIndex, search, block, words, normWord, k6, k4, isContent, splitParagraphs };
 })();
 if (typeof module !== 'undefined') module.exports = Engine;
 </script>
@@ -403,7 +433,7 @@ const el = {}; // cached refs (the hint panel can move into a floating window)
  'fontMinus','fontPlus','freezeBtn','copyBtn','pipBtn','manualQ','manualBtn','log','viewer','viewerWrap'].forEach(id => el[id] = document.getElementById(id));
 
 const state = { docs: [], index: null, running: false, mode: 'tab', lang: 'auto', model: 'onnx-community/whisper-base',
-  utter: [], frozen: false, minScore: 0.30, sem: false, semReady: false, fontSize: 22, current: null, searchSeq: 0 };
+  utter: [], utterT: [], history: [], frozen: false, minScore: 0.35, sem: false, semReady: false, fontSize: 22, current: null, searchSeq: 0 };
 
 /* ---------- small helpers ---------- */
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -504,48 +534,79 @@ function highlight(text, q){
   return out + esc(text.slice(last));
 }
 function badge(s){ const p = Math.round(s.score * 100); const cls = p >= 70 ? 'hi' : p >= 45 ? 'mid' : 'lo'; return `<span class="badge ${cls}">${p}%</span>`; }
+// answer text -> clean paragraphs and bullet lists
+function formatAnswer(paras){
+  let html = '', list = [];
+  const flush = () => { if (list.length) { html += '<ul>' + list.map(li => `<li>${esc(li)}</li>`).join('') + '</ul>'; list = []; } };
+  for (const p of paras) {
+    const m = p.match(/^\s*[-•*–—]\s*(.*)$/);
+    if (m) list.push(m[1]); else { flush(); html += `<p>${esc(p)}</p>`; }
+  }
+  flush();
+  return html;
+}
+function blockLabel(b){ const bl = Engine.block(state.index, b); const t = bl.question || bl.answer[0] || ''; return t.length > 90 ? t.slice(0, 90) + '…' : t; }
 function renderHit(hit, q){
-  const ix = state.index, u = hit.u, ctx = Engine.context(ix, u);
-  let body;
-  const at = ctx.para.indexOf(u.text);
-  if (at >= 0 && ctx.para !== u.text) {
-    const before = ctx.para.slice(0, at), after = ctx.para.slice(at + u.text.length);
-    body = highlight(before, q) + '<span class="seg">' + highlight(u.text, q) + '</span>' + highlight(after, q);
-  } else body = '<span class="seg">' + highlight(u.text, q) + '</span>';
-  const kind = hit.exact ? 'точное совпадение' : (hit.sem != null && hit.sem > hit.lex ? 'похоже по смыслу' : 'похожая фраза');
-  el.hintMain.innerHTML =
-    `<div class="hit-meta">${badge(hit)}<span>${kind}</span><span>· ${esc(state.docs[u.d].name)}, абзац ${u.pi + 1}</span>` +
-    `<button class="small" data-goto="${u.d}-${u.pi}">показать в документе</button></div>` +
-    `<div class="hit-text">${body}</div>` +
-    (ctx.answer ? `<div class="answer"><span class="lbl">Ответ</span>${esc(ctx.answer).replace(/\n/g, '<br>')}</div>` : '');
-  state.current = { hit, q, copy: ctx.answer ? ctx.para + '\n' + ctx.answer : ctx.para };
+  const ix = state.index, bl = Engine.block(ix, hit.b);
+  const kind = hit.exact ? 'точное совпадение' : (hit.sem != null && hit.sem > hit.lex ? 'по смыслу' : 'похожий вопрос');
+  const main = bl.question
+    ? `<div class="qtitle">${highlight(bl.question, q)}</div>` + (bl.answer.length ? `<div class="ans">${formatAnswer(bl.answer)}</div>` : '')
+    : `<div class="ans">${formatAnswer(bl.answer)}</div>`;
+  el.hintMain.innerHTML = main +
+    `<div class="hit-meta">${badge(hit)}<span>${kind}</span><span>· ${esc(state.docs[bl.d].name)}</span>` +
+    `<button class="small" data-goto="${bl.d}-${bl.firstPi}">в документе</button></div>`;
+  el.hintMain.scrollTop = 0;
+  state.current = { b: hit.b, score: hit.score, copy: [bl.question, ...bl.answer].filter(Boolean).join('\n') };
+}
+function renderSide(){
+  const alts = (state.lastAlts || []).filter(a => !state.current || a.b !== state.current.b);
+  const hist = state.history.filter(h => !state.current || h.b !== state.current.b).slice(0, 4);
+  el.alts.innerHTML =
+    (alts.length ? `<div class="side-lbl">Может, имели в виду:</div>` + alts.map((a, i) => `<div class="alt" data-alt="${i}">${badge(a)}${esc(blockLabel(a.b))}</div>`).join('') : '') +
+    (hist.length ? `<div class="side-lbl">Недавние:</div>` + hist.map((h, i) => `<div class="alt" data-hist="${i}">${esc(blockLabel(h.b))}</div>`).join('') : '');
+  state.sideAlts = alts; state.sideHist = hist;
+}
+function show(hit, q){
+  renderHit(hit, q);
+  state.shownAt = Date.now();
+  state.history = [{ b: hit.b, hit, q }, ...state.history.filter(h => h.b !== hit.b)].slice(0, 8);
+  renderSide();
 }
 function showResults(res, heardText, manual){
+  el.heard.innerHTML = heardText ? `Услышано: ${esc(heardText.length > 140 ? '…' + heardText.slice(-140) : heardText)}` : '';
   if (state.frozen && !manual) return;
-  const ok = res.results.filter(r => r.score >= state.minScore);
-  el.heard.innerHTML = heardText ? `Услышано: <b>${esc(heardText.length > 160 ? '…' + heardText.slice(-160) : heardText)}</b>` : '';
-  if (!ok.length) {
-    if (state.current) el.hintMain.classList.add('dim');
-    else el.hintMain.innerHTML = '<div class="empty">Совпадений пока нет.</div>';
-    el.heard.innerHTML += ' <span class="hint-muted">— в документе не найдено</span>';
+  const top = res.results[0];
+  if (!top || top.score < state.minScore) {
+    if (manual && !state.current) el.hintMain.innerHTML = '<div class="empty">В документе не найдено.</div>';
+    el.heard.innerHTML += ' <span class="hint-muted">— не найдено, подсказка не меняется</span>';
     return;
   }
-  el.hintMain.classList.remove('dim');
-  renderHit(ok[0], res.q);
-  state.lastAlts = ok.slice(1, 3);
-  state.lastQ = res.q;
-  el.alts.innerHTML = state.lastAlts.map((a, i) =>
-    `<div class="alt" data-alt="${i}">${badge(a)}${esc(a.u.text.length > 150 ? a.u.text.slice(0, 150) + '…' : a.u.text)}</div>`).join('');
+  state.lastAlts = res.results.slice(1, 3).filter(r => r.score >= Math.max(state.minScore, top.score - 0.15));
+  if (!manual && state.current) {
+    if (top.b === state.current.b) { renderSide(); return; } // same question — keep it on screen
+    // don't jump to another topic too easily: right after a switch we need a much better match
+    const age = Date.now() - (state.shownAt || 0);
+    const need = age < 8000 ? Math.max(0.72, state.current.score + 0.1) : state.minScore;
+    if (top.score < need) { el.heard.innerHTML += ' <span class="hint-muted">— похоже на другой вопрос, но не уверен</span>'; return; }
+  }
+  show(top, res.q);
 }
-el.alts.addEventListener('click', e => { const a = e.target.closest('[data-alt]'); if (!a) return;
-  const hit = state.lastAlts[+a.dataset.alt]; if (hit) { renderHit(hit, state.lastQ); el.hintMain.classList.remove('dim'); } });
+el.alts.addEventListener('click', e => {
+  const a = e.target.closest('[data-alt],[data-hist]'); if (!a) return;
+  const h = a.dataset.alt != null ? state.sideAlts[+a.dataset.alt] : state.sideHist[+a.dataset.hist];
+  if (h) show(h.hit || h, h.q || state.lastQ || { terms: [] });
+});
 el.hintMain.addEventListener('click', e => { const g = e.target.dataset.goto; if (g) { const [d, pi] = g.split('-').map(Number); showInDoc(d, pi); } });
 
 async function runSearch(text, { withPrev = true, manual = false } = {}){
   const ix = state.index;
   if (!ix || !ix.N) { el.hintMain.innerHTML = '<div class="empty">Сначала добавьте документ.</div>'; return; }
+  // ignore short remarks like "да, понятно", "okay thank you"
+  if (!manual && Engine.words(text).filter(Engine.isContent).length < 2) return;
   const seq = ++state.searchSeq;
-  const prev = withPrev ? (state.utter[state.utter.length - 2] || '') : '';
+  // glue the previous phrase only if it was said in the last 10 seconds (a question split by a pause)
+  const prevT = state.utterT[state.utterT.length - 2] || 0;
+  const prev = withPrev && Date.now() - prevT < 10000 ? (state.utter[state.utter.length - 2] || '') : '';
   const queries = prev && prev !== text ? [text, prev + ' ' + text] : [text];
   let vecs = [];
   if (state.sem && state.semReady) { try { vecs = (await call('embed', { texts: queries })).vectors; } catch {} }
@@ -553,8 +614,9 @@ async function runSearch(text, { withPrev = true, manual = false } = {}){
   let best = Engine.search(ix, queries[0], { qvec: vecs[0], k: 4 });
   if (queries[1]) {
     const b = Engine.search(ix, queries[1], { qvec: vecs[1], k: 4 });
-    if (b.results[0] && (!best.results[0] || b.results[0].score * 0.95 > best.results[0].score)) best = b;
+    if (b.results[0] && (!best.results[0] || b.results[0].score * 0.9 > best.results[0].score)) best = b;
   }
+  state.lastQ = best.q;
   showResults(best, text, manual);
 }
 
@@ -584,7 +646,8 @@ el.log.addEventListener('click', e => { const d = e.target.closest('[data-text]'
 function onTranscript(raw){
   const t = cleanText(raw); if (!t) return;
   if (state.utter[state.utter.length - 1] === t) return;
-  state.utter.push(t); if (state.utter.length > 20) state.utter.shift();
+  state.utter.push(t); state.utterT.push(Date.now());
+  if (state.utter.length > 20) { state.utter.shift(); state.utterT.shift(); }
   addLog(t); runSearch(t);
 }
 
@@ -749,8 +812,6 @@ function startWebSpeech(){
       if (r.isFinal) onTranscript(r[0].transcript); else interim += r[0].transcript;
     }
     setInterim(interim.trim());
-    clearTimeout(interimTimer);
-    if (interim.trim().split(/\s+/).length >= 3) interimTimer = setTimeout(() => runSearch(interim.trim()), 350);
   };
   rec.onerror = e => {
     if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { stop(); setStatus('error', 'Нет доступа к микрофону'); toast('Разрешите доступ к микрофону в адресной строке браузера.'); }
@@ -805,7 +866,7 @@ document.querySelectorAll('input[name=mode]').forEach(r => r.addEventListener('c
 }));
 el.langSel.addEventListener('change', () => { state.lang = el.langSel.value; store.set('lang', state.lang); if (rec) rec.lang = WEBSPEECH_LANG[state.lang] || navigator.language; });
 el.modelSel.addEventListener('change', () => { state.model = el.modelSel.value; store.set('model', state.model); asrReady = false; if (state.running && state.mode !== 'speech') ensureAsr().catch(() => {}); });
-el.minScore.addEventListener('input', () => { state.minScore = el.minScore.value / 100; el.minVal.textContent = el.minScore.value + '%'; store.set('min', +el.minScore.value); });
+el.minScore.addEventListener('input', () => { state.minScore = el.minScore.value / 100; el.minVal.textContent = el.minScore.value + '%'; store.set('min2', +el.minScore.value); });
 el.semChk.addEventListener('change', () => { state.sem = el.semChk.checked; store.set('sem', state.sem); if (state.sem) prepareSemantic(); });
 
 let semJob = 0;
@@ -862,7 +923,7 @@ el.pipBtn.addEventListener('click', async () => {
   state.docs = store.get('docs', []);
   state.lang = store.get('lang', 'auto'); el.langSel.value = state.lang;
   state.model = store.get('model', state.model); el.modelSel.value = state.model;
-  const min = store.get('min', 30); el.minScore.value = min; state.minScore = min / 100; el.minVal.textContent = min + '%';
+  const min = store.get('min2', 35); el.minScore.value = min; state.minScore = min / 100; el.minVal.textContent = min + '%';
   state.fontSize = store.get('font', 22); applyFont();
   const mode = store.get('mode', 'tab'); const r = document.querySelector(`input[name=mode][value="${mode}"]`); if (r) r.checked = true;
   syncModeUI();
